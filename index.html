@@ -31,15 +31,15 @@
     .logo-react{
       position: relative;
       display: block;
-      height:220px;
-      width: clamp(520px, 45vw, 900px);
-      transform: translateX(-3vw);
+      height:260px;
+      width: clamp(620px, 52vw, 1100px);
+      transform: translateX(-4vw);
       overflow: visible;
     }
-    @media (max-width: 1200px){ .logo-react{ height:200px; width:clamp(420px, 48vw, 760px); transform: translateX(-2vw);} }
-    @media (max-width: 992px){ .logo-react{ height:180px; width:clamp(360px, 52vw, 680px); transform: translateX(-1vw);} }
-    @media (max-width: 768px){ .logo-react{ height:160px; width:85vw; transform:none; } }
-    @media (max-width: 480px){ .logo-react{ height:140px; width:90vw; } }
+    @media (max-width: 1200px){ .logo-react{ height:240px; width:clamp(520px, 50vw, 920px); transform: translateX(-3vw);} }
+    @media (max-width: 992px){ .logo-react{ height:200px; width:clamp(420px, 54vw, 760px); transform: translateX(-2vw);} }
+    @media (max-width: 768px){ .logo-react{ height:170px; width:88vw; transform:none; } }
+    @media (max-width: 480px){ .logo-react{ height:150px; width:92vw; } }
     .paper-meta{margin-left:auto; display:flex; gap:16px; color:var(--muted); font-size:14px}
     .container{max-width:1200px; margin:0 auto; padding:24px;}
 
@@ -451,7 +451,7 @@
       renderer.setClearColor(0x000000, 0);
       container.appendChild(renderer.domElement);
 
-      camera.position.z = 6.5;
+      camera.position.z = 7.2;
       scene.background = null;
 
       const particleMaterial = new THREE.ShaderMaterial({
@@ -475,9 +475,9 @@
             newPos.x = cos(angle) * newRadius;
             newPos.z = sin(angle) * newRadius;
             newPos.y = height * vessel - 1.2;
-            newPos *= 2.2;
+            newPos *= 2.6; // spread out geometry for more spacing
             vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
-            gl_PointSize = max(1.4, size * (200.0 / -mvPosition.z));
+            gl_PointSize = max(1.8, size * (260.0 / -mvPosition.z));
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
@@ -516,7 +516,7 @@
         positions[i3 + 2] = Math.sin(randAngle) * randRadius;
         const shade = 0.08 + Math.sqrt(radius) * 0.18 + Math.random() * 0.02;
         colors[i3] = shade; colors[i3 + 1] = shade; colors[i3 + 2] = shade;
-        sizes[i] = (1.0 - Math.abs(vesselHeight * 0.5)) * 0.2 + 0.1;
+        sizes[i] = (1.0 - Math.abs(vesselHeight * 0.5)) * 0.28 + 0.14; // larger points
         i3 += 3;
       }
 
