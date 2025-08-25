@@ -31,15 +31,16 @@
     .logo-react{
       position: relative;
       display: block;
-      height:260px;
-      width: clamp(620px, 52vw, 1100px);
-      transform: translateX(-4vw);
+      height:520px; /* 2x */
+      width: clamp(1240px, 95vw, 2200px); /* ~2x with viewport cap */
+      transform: translateX(-2vw);
       overflow: visible;
+      padding: 8px 0; /* gentle padding to frame the logo */
     }
-    @media (max-width: 1200px){ .logo-react{ height:240px; width:clamp(520px, 50vw, 920px); transform: translateX(-3vw);} }
-    @media (max-width: 992px){ .logo-react{ height:200px; width:clamp(420px, 54vw, 760px); transform: translateX(-2vw);} }
-    @media (max-width: 768px){ .logo-react{ height:170px; width:88vw; transform:none; } }
-    @media (max-width: 480px){ .logo-react{ height:150px; width:92vw; } }
+    @media (max-width: 1200px){ .logo-react{ height:480px; width:clamp(1040px, 92vw, 1840px); transform: translateX(-2vw);} }
+    @media (max-width: 992px){ .logo-react{ height:400px; width:clamp(840px, 90vw, 1520px); transform: translateX(-1vw);} }
+    @media (max-width: 768px){ .logo-react{ height:340px; width:92vw; transform:none; } }
+    @media (max-width: 480px){ .logo-react{ height:300px; width:94vw; } }
     .paper-meta{margin-left:auto; display:flex; gap:16px; color:var(--muted); font-size:14px}
     .container{max-width:1200px; margin:0 auto; padding:24px;}
 
@@ -477,7 +478,7 @@
             newPos.y = height * vessel - 1.2;
             newPos *= 2.6; // spread out geometry for more spacing
             vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
-            gl_PointSize = max(0.2, size * (32.5 / -mvPosition.z));
+            gl_PointSize = max(0.2, size * (81.25 / -mvPosition.z)); // 2.5x larger points
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
@@ -516,7 +517,7 @@
         positions[i3 + 2] = Math.sin(randAngle) * randRadius;
         const shade = 0.08 + Math.sqrt(radius) * 0.18 + Math.random() * 0.02;
         colors[i3] = shade; colors[i3 + 1] = shade; colors[i3 + 2] = shade;
-        sizes[i] = (1.0 - Math.abs(vesselHeight * 0.5)) * 0.035 + 0.018; // ~8x smaller points
+        sizes[i] = (1.0 - Math.abs(vesselHeight * 0.5)) * 0.0875 + 0.045; // 2.5x larger than previous
         i3 += 3;
       }
 
