@@ -439,7 +439,7 @@
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
         powerPreference: 'high-performance',
-        alpha: false,
+        alpha: true,
         stencil: false,
         depth: true
       });
@@ -448,11 +448,11 @@
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.setClearColor(0xF0EEE6, 1);
+      renderer.setClearColor(0x000000, 0);
       container.appendChild(renderer.domElement);
 
       camera.position.z = 6.5;
-      scene.background = new THREE.Color('#F0EEE6');
+      scene.background = null;
 
       const particleMaterial = new THREE.ShaderMaterial({
         uniforms: { time: { value: 0 }, opacity: { value: 0.9 } },
