@@ -88,6 +88,12 @@
     th,td{border:1px solid var(--rule); padding:10px; text-align:left}
     th{background:rgba(0,0,0,0.04)}
 
+    /* Kelly formula card */
+    .formula-card{background:rgba(255,255,255,0.8); color:var(--ink); padding:16px 20px; border-radius:12px; margin:14px 0; box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+    .formula-card h4{margin:0 0 8px; font-size:18px; color:#002147}
+    .formula{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; background:rgba(0,0,0,0.04); padding:10px 12px; border-radius:8px; overflow:auto}
+    .formula small{display:block; color:var(--muted); margin-top:8px}
+
     .footer{color:var(--muted); font-size:14px; margin-top:20px}
 
     /* Scrollbar styling (body + hero) */
@@ -225,6 +231,15 @@
       </ul>
 
       <h3>3.3 Risk Management Framework</h3>
+      <div class="formula-card" aria-label="Kelly Criterion formula">
+        <h4>Kelly Criterion (Optimal Fraction)</h4>
+        <div class="formula">
+          f* = p - (1 - p) / b
+          <br/>
+          where p = win probability, b = average win/loss ratio
+        </div>
+        <small>Kelly Criterion — J. L. Kelly Jr. (1956)</small>
+      </div>
       <ul>
         <li>Dynamic position sizing based on performance metrics</li>
         <li>Real-time drawdown monitoring</li>
