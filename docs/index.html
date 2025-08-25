@@ -28,6 +28,9 @@
       overflow:hidden; /* prevent transformed content from overlapping sections */
     }
     .logo{height:96px; width:auto; display:block}
+    .logo-react{height:96px; width:min(42vw, 460px); display:block; flex:0 0 auto}
+    @media (max-width: 768px){ .logo-react{height:72px; width:min(60vw, 360px)} }
+    @media (max-width: 480px){ .logo-react{height:60px; width:85vw} }
     .paper-meta{margin-left:auto; display:flex; gap:16px; color:var(--muted); font-size:14px}
     .container{max-width:1200px; margin:0 auto; padding:24px;}
 
@@ -124,7 +127,7 @@
 </head>
 <body>
   <header class="topbar">
-    <img src="META.webp" alt="METACOGNITION Logo" class="logo" />
+    <div id="logo-react" class="logo-react" aria-label="METACOGNITION Logo Visualization"></div>
     <div class="paper-meta">
       <span>METACOGNITION TRADING RESEARCH</span>
       <span>2025</span>
@@ -392,4 +395,150 @@
     function start(){ if(rafId) cancelAnimationFrame(rafId); rafId = requestAnimationFrame(tick); }
     start();
   })();
+</script>
+
+<!-- React + Three.js particle visualization replacing the logo -->
+<script type="module">
+  import React, { useEffect, useRef } from 'https://esm.sh/react@18.3.1';
+  import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client';
+  import * as THREE from 'https://esm.sh/three@0.158.0';
+
+  const metadata = {
+    themes: "Source, Radiance, Forgiveness",
+    visualization: "Particles radiating from a central source in gentle waves",
+    promptSuggestion: "1. Add subtle radiance variations\n2. Create source-centered waves\n3. Vary emanation patterns naturally\n4. Introduce gentle pulse rhythms\n5. Make radiance follow natural flows"
+  };
+
+  const ParticleCylinder = () => {
+    const containerRef = useRef(null);
+    useEffect(() => {
+      if (!containerRef.current) return;
+      const container = containerRef.current;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, container.clientWidth / Math.max(1, container.clientHeight), 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, Math.max(1, container.clientHeight));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0xF0EEE6, 0); // transparent to blend with header
+      container.appendChild(renderer.domElement);
+
+      camera.position.z = 6.25;
+
+      const particleMaterial = new THREE.ShaderMaterial({
+        uniforms: { time: { value: 0 }, opacity: { value: 0.4 } },
+        vertexShader: `
+          uniform float time;
+          attribute float size;
+          attribute vec3 customColor;
+          varying vec3 vColor;
+          float rand(vec2 co){ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453); }
+          void main(){
+            vColor = customColor;
+            vec3 pos = position;
+            float radius = length(pos.xz);
+            float angle = atan(pos.z, pos.x);
+            float height = pos.y;
+            float pulse = sin(time * 2.0) * 0.2 + 0.8;
+            float wave = sin(radius * 3.0 - time * 3.0) * 0.2;
+            float verticalWave = cos(radius * 2.0 - time * 1.5) * 0.3;
+            float rotationSpeed = 0.05 / (radius + 1.0);
+            float newAngle = angle + time * rotationSpeed;
+            vec3 newPos;
+            newPos.x = cos(newAngle) * (radius + wave) * pulse;
+            newPos.z = sin(newAngle) * (radius + wave) * pulse;
+            newPos.y = height + verticalWave;
+            newPos *= 2.34375;
+            pos = newPos;
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            gl_PointSize = size * (100.0 / -mvPosition.z);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          uniform float opacity;
+          varying vec3 vColor;
+          void main(){
+            float dist = length(gl_PointCoord - vec2(0.5));
+            if (dist > 0.5) discard;
+            float alpha = (1.0 - smoothstep(0.45, 0.5, dist)) * opacity;
+            gl_FragColor = vec4(vColor, alpha);
+          }
+        `,
+        transparent: true,
+        depthWrite: false
+      });
+
+      const count = 37500;
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+      const sizes = new Float32Array(count);
+      for (let i = 0; i < count; i++){
+        const t = i / count;
+        const radius = Math.pow(t, 0.5);
+        const angle = t * Math.PI * 30.0;
+        const height = (Math.random() - 0.5) * 2.0;
+        positions[i*3] = Math.cos(angle) * radius;
+        positions[i*3+1] = height;
+        positions[i*3+2] = Math.sin(angle) * radius;
+        const centerDist = Math.sqrt(radius);
+        const baseShade = 0.02 + centerDist * 0.13;
+        const variation = Math.random() * 0.05;
+        const shade = baseShade + variation;
+        colors[i*3] = shade; colors[i*3+1] = shade; colors[i*3+2] = shade;
+        sizes[i] = (1.0 - centerDist) * 0.164 + 0.133;
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+      const points = new THREE.Points(geometry, particleMaterial);
+      scene.add(points);
+
+      const clock = new THREE.Clock();
+      let rafId = 0;
+      const animate = () => {
+        rafId = requestAnimationFrame(animate);
+        const t = clock.getElapsedTime() * 0.4;
+        particleMaterial.uniforms.time.value = t;
+        renderer.render(scene, camera);
+      };
+      animate();
+
+      const handleResize = () => {
+        const w = Math.max(1, container.clientWidth);
+        const h = Math.max(1, container.clientHeight);
+        camera.aspect = w / h; camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      };
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        if (rafId) cancelAnimationFrame(rafId);
+        if (renderer){ renderer.dispose(); if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement); }
+        geometry.dispose(); particleMaterial.dispose();
+      };
+    }, []);
+
+    return (
+      React.createElement('div', { ref: containerRef, style: {
+        margin: 0,
+        background: 'transparent',
+        overflow: 'hidden',
+        display: 'block',
+        height: '100%',
+        width: '100%'
+      }})
+    );
+  };
+  ParticleCylinder.metadata = metadata;
+
+  const mount = document.getElementById('logo-react');
+  if (mount){
+    const root = createRoot(mount);
+    root.render(React.createElement(ParticleCylinder));
+  }
 </script>
