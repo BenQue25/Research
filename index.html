@@ -88,11 +88,9 @@
     th,td{border:1px solid var(--rule); padding:10px; text-align:left}
     th{background:rgba(0,0,0,0.04)}
 
-    /* Kelly formula card */
-    .formula-card{background:rgba(255,255,255,0.8); color:var(--ink); padding:16px 20px; border-radius:12px; margin:14px 0; box-shadow:0 2px 6px rgba(0,0,0,0.06)}
-    .formula-card h4{margin:0 0 8px; font-size:18px; color:#002147}
-    .formula{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; background:rgba(0,0,0,0.04); padding:10px 12px; border-radius:8px; overflow:auto}
-    .formula small{display:block; color:var(--muted); margin-top:8px}
+    /* Kelly formula presentation */
+    .formula{font-family: Georgia, "Times New Roman", Times, serif; background:transparent; padding:0; border-radius:0; overflow:visible; font-weight:700; font-size:20px; line-height:1.4; color:var(--ink)}
+    .formula small{display:block; color:var(--muted); margin-top:6px}
 
     .footer{color:var(--muted); font-size:14px; margin-top:20px}
 
@@ -143,6 +141,18 @@
       body::-webkit-scrollbar, .hero::-webkit-scrollbar{width:8px; height:8px}
     }
   </style>
+  <!-- MathJax v3 for typesetting formulas -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$','$$']],
+        processEscapes: true
+      },
+      options: { renderActions: { addMenu: [] } }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -231,15 +241,15 @@
       </ul>
 
       <h3>3.3 Risk Management Framework</h3>
-      <div class="formula-card" aria-label="Kelly Criterion formula">
-        <h4>Kelly Criterion (Optimal Fraction)</h4>
-        <div class="formula">
-          f* = p - (1 - p) / b
-          <br/>
-          where p = win probability, b = average win/loss ratio
-        </div>
-        <small>Kelly Criterion — J. L. Kelly Jr. (1956)</small>
+      <p><strong>The general form can be rewritten as follows</strong></p>
+      <div class="formula" role="math" aria-label="Kelly Criterion">
+        $$
+          \boldsymbol{f}^{*}
+          \,=\, \frac{\boldsymbol{p}}{\boldsymbol{l}}\left(1 - \frac{(1-\boldsymbol{p})\,\boldsymbol{l}}{\boldsymbol{p}\,\boldsymbol{g}}\right)
+          \,=\, \frac{\boldsymbol{p}}{\boldsymbol{l}}\left(1 - \frac{1}{\mathrm{WLP}}\,\frac{1}{\mathrm{WLR}}\right)
+        $$
       </div>
+      <small class="formula-ref" style="color:var(--muted)">Kelly Criterion — J. L. Kelly Jr. (1956)</small>
       <ul>
         <li>Dynamic position sizing based on performance metrics</li>
         <li>Real-time drawdown monitoring</li>
