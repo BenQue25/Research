@@ -477,7 +477,7 @@
             newPos.y = height * vessel - 1.2;
             newPos *= 2.6; // spread out geometry for more spacing
             vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
-            gl_PointSize = max(1.8, size * (260.0 / -mvPosition.z));
+            gl_PointSize = max(0.2, size * (32.5 / -mvPosition.z));
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
@@ -516,7 +516,7 @@
         positions[i3 + 2] = Math.sin(randAngle) * randRadius;
         const shade = 0.08 + Math.sqrt(radius) * 0.18 + Math.random() * 0.02;
         colors[i3] = shade; colors[i3 + 1] = shade; colors[i3 + 2] = shade;
-        sizes[i] = (1.0 - Math.abs(vesselHeight * 0.5)) * 0.28 + 0.14; // larger points
+        sizes[i] = (1.0 - Math.abs(vesselHeight * 0.5)) * 0.035 + 0.018; // ~8x smaller points
         i3 += 3;
       }
 
