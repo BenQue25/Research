@@ -29,14 +29,17 @@
     }
     .logo{height:96px; width:auto; display:block}
     .logo-react{
-      height:140px; width:clamp(520px, 45vw, 900px);
-      display:block; flex:0 0 auto;
-      transform: translateX(-3vw); /* extend into left negative space on desktop */
+      position: relative;
+      display: block;
+      height:220px;
+      width: clamp(520px, 45vw, 900px);
+      transform: translateX(-3vw);
+      overflow: visible;
     }
-    @media (max-width: 1200px){ .logo-react{ height:128px; width:clamp(420px, 48vw, 760px); transform: translateX(-2vw);} }
-    @media (max-width: 992px){ .logo-react{ height:110px; width:clamp(360px, 52vw, 680px); transform: translateX(-1vw);} }
-    @media (max-width: 768px){ .logo-react{ height:120px; width:85vw; transform:none; } }
-    @media (max-width: 480px){ .logo-react{ height:120px; width:90vw; } }
+    @media (max-width: 1200px){ .logo-react{ height:200px; width:clamp(420px, 48vw, 760px); transform: translateX(-2vw);} }
+    @media (max-width: 992px){ .logo-react{ height:180px; width:clamp(360px, 52vw, 680px); transform: translateX(-1vw);} }
+    @media (max-width: 768px){ .logo-react{ height:160px; width:85vw; transform:none; } }
+    @media (max-width: 480px){ .logo-react{ height:140px; width:90vw; } }
     .paper-meta{margin-left:auto; display:flex; gap:16px; color:var(--muted); font-size:14px}
     .container{max-width:1200px; margin:0 auto; padding:24px;}
 
@@ -436,7 +439,7 @@
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
         powerPreference: 'high-performance',
-        alpha: true,
+        alpha: false,
         stencil: false,
         depth: true
       });
@@ -444,14 +447,15 @@
 
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.setClearColor(0xF0EEE6, 1);
       container.appendChild(renderer.domElement);
 
-      camera.position.z = 5;
-      // Keep transparent to preserve existing page background/view
-      // scene.background = new THREE.Color('#F0EEE6');
+      camera.position.z = 6.5;
+      scene.background = new THREE.Color('#F0EEE6');
 
       const particleMaterial = new THREE.ShaderMaterial({
-        uniforms: { time: { value: 0 }, opacity: { value: 0.4 } },
+        uniforms: { time: { value: 0 }, opacity: { value: 0.9 } },
         vertexShader: `
           uniform float time;
           attribute float size;
@@ -471,9 +475,9 @@
             newPos.x = cos(angle) * newRadius;
             newPos.z = sin(angle) * newRadius;
             newPos.y = height * vessel - 1.2;
-            newPos *= 2.75;
+            newPos *= 2.2;
             vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
-            gl_PointSize = size * (128.0 / -mvPosition.z);
+            gl_PointSize = max(1.4, size * (200.0 / -mvPosition.z));
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
@@ -510,7 +514,7 @@
         positions[i3] = Math.cos(randAngle) * randRadius;
         positions[i3 + 1] = vesselHeight;
         positions[i3 + 2] = Math.sin(randAngle) * randRadius;
-        const shade = 0.1 + Math.sqrt(radius) * 0.1 + Math.random() * 0.02;
+        const shade = 0.08 + Math.sqrt(radius) * 0.18 + Math.random() * 0.02;
         colors[i3] = shade; colors[i3 + 1] = shade; colors[i3 + 2] = shade;
         sizes[i] = (1.0 - Math.abs(vesselHeight * 0.5)) * 0.2 + 0.1;
         i3 += 3;
