@@ -403,33 +403,52 @@
   })();
 </script>
 
-<!-- React + Three.js particle visualization replacing the logo -->
+<!-- React + Three.js ParticleVessel visualization replacing the logo -->
 <script type="module">
   import React, { useEffect, useRef } from 'https://esm.sh/react@18.3.1';
   import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client';
   import * as THREE from 'https://esm.sh/three@0.158.0';
 
-  const metadata = {
-    themes: "Source, Radiance, Forgiveness",
-    visualization: "Particles radiating from a central source in gentle waves",
-    promptSuggestion: "1. Add subtle radiance variations\n2. Create source-centered waves\n3. Vary emanation patterns naturally\n4. Introduce gentle pulse rhythms\n5. Make radiance follow natural flows"
-  };
+  const EmptyParticles = ({ count = 45000 }) => {
+    const mountRef = useRef(null);
+    const animationRef = useRef(null);
+    const sceneRef = useRef(null);
+    const rendererRef = useRef(null);
+    const cameraRef = useRef(null);
+    const geometryRef = useRef(null);
+    const materialRef = useRef(null);
+    const pointsRef = useRef(null);
+    const resizeObserverRef = useRef(null);
+    const timeoutsRef = useRef([]);
 
-  const ParticleCylinder = () => {
-    const containerRef = useRef(null);
     useEffect(() => {
-      if (!containerRef.current) return;
-      const container = containerRef.current;
+      if (!mountRef.current) return;
+      const container = mountRef.current;
+      const width = Math.max(1, container.clientWidth);
+      const height = Math.max(1, container.clientHeight);
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, container.clientWidth / Math.max(1, container.clientHeight), 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(container.clientWidth, Math.max(1, container.clientHeight));
+      sceneRef.current = scene;
+
+      const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+      cameraRef.current = camera;
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: 'high-performance',
+        alpha: true,
+        stencil: false,
+        depth: true
+      });
+      rendererRef.current = renderer;
+
+      renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setClearColor(0xF0EEE6, 0); // transparent to blend with header
       container.appendChild(renderer.domElement);
 
-      camera.position.z = 6.25;
+      camera.position.z = 5;
+      // Keep transparent to preserve existing page background/view
+      // scene.background = new THREE.Color('#F0EEE6');
 
       const particleMaterial = new THREE.ShaderMaterial({
         uniforms: { time: { value: 0 }, opacity: { value: 0.4 } },
@@ -438,113 +457,153 @@
           attribute float size;
           attribute vec3 customColor;
           varying vec3 vColor;
-          float rand(vec2 co){ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453); }
-          void main(){
+          void main() {
             vColor = customColor;
             vec3 pos = position;
             float radius = length(pos.xz);
             float angle = atan(pos.z, pos.x);
             float height = pos.y;
-            float pulse = sin(time * 2.0) * 0.2 + 0.8;
-            float wave = sin(radius * 3.0 - time * 3.0) * 0.2;
-            float verticalWave = cos(radius * 2.0 - time * 1.5) * 0.3;
-            float rotationSpeed = 0.05 / (radius + 1.0);
-            float newAngle = angle + time * rotationSpeed;
+            float vessel = smoothstep(0.3, 0.7, radius) * smoothstep(1.0, 0.7, radius);
+            angle += time * 0.08;
+            float space = sin(time * 0.3 + radius * 3.0) * 0.1;
+            float newRadius = (radius + space) * vessel;
             vec3 newPos;
-            newPos.x = cos(newAngle) * (radius + wave) * pulse;
-            newPos.z = sin(newAngle) * (radius + wave) * pulse;
-            newPos.y = height + verticalWave;
-            newPos *= 2.34375;
-            pos = newPos;
-            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-            gl_PointSize = size * (100.0 / -mvPosition.z);
+            newPos.x = cos(angle) * newRadius;
+            newPos.z = sin(angle) * newRadius;
+            newPos.y = height * vessel - 1.2;
+            newPos *= 2.75;
+            vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
+            gl_PointSize = size * (128.0 / -mvPosition.z);
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
         fragmentShader: `
           uniform float opacity;
           varying vec3 vColor;
-          void main(){
-            float dist = length(gl_PointCoord - vec2(0.5));
-            if (dist > 0.5) discard;
-            float alpha = (1.0 - smoothstep(0.45, 0.5, dist)) * opacity;
+          void main() {
+            vec2 center = gl_PointCoord - vec2(0.5);
+            float dist = dot(center, center);
+            if (dist > 0.25) discard;
+            float alpha = (1.0 - smoothstep(0.2025, 0.25, dist)) * opacity;
             gl_FragColor = vec4(vColor, alpha);
           }
         `,
         transparent: true,
-        depthWrite: false
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+        side: THREE.DoubleSide,
+        vertexColors: true
       });
+      materialRef.current = particleMaterial;
 
-      const count = 37500;
       const positions = new Float32Array(count * 3);
       const colors = new Float32Array(count * 3);
       const sizes = new Float32Array(count);
-      for (let i = 0; i < count; i++){
+      let i3 = 0;
+      for (let i = 0; i < count; i++) {
         const t = i / count;
         const radius = Math.pow(t, 0.5);
-        const angle = t * Math.PI * 30.0;
-        const height = (Math.random() - 0.5) * 2.0;
-        positions[i*3] = Math.cos(angle) * radius;
-        positions[i*3+1] = height;
-        positions[i*3+2] = Math.sin(angle) * radius;
-        const centerDist = Math.sqrt(radius);
-        const baseShade = 0.02 + centerDist * 0.13;
-        const variation = Math.random() * 0.05;
-        const shade = baseShade + variation;
-        colors[i*3] = shade; colors[i*3+1] = shade; colors[i*3+2] = shade;
-        sizes[i] = (1.0 - centerDist) * 0.164 + 0.133;
+        const angle = t * Math.PI * 40.0;
+        const vesselHeight = Math.sin(t * Math.PI) * 1.8;
+        const randRadius = radius + (Math.random() - 0.5) * 0.05;
+        const randAngle = angle + (Math.random() - 0.5) * 0.1;
+        positions[i3] = Math.cos(randAngle) * randRadius;
+        positions[i3 + 1] = vesselHeight;
+        positions[i3 + 2] = Math.sin(randAngle) * randRadius;
+        const shade = 0.1 + Math.sqrt(radius) * 0.1 + Math.random() * 0.02;
+        colors[i3] = shade; colors[i3 + 1] = shade; colors[i3 + 2] = shade;
+        sizes[i] = (1.0 - Math.abs(vesselHeight * 0.5)) * 0.2 + 0.1;
+        i3 += 3;
       }
 
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
       geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+      geometry.computeBoundingBox();
+      geometry.computeBoundingSphere();
+      geometryRef.current = geometry;
 
       const points = new THREE.Points(geometry, particleMaterial);
+      pointsRef.current = points;
       scene.add(points);
 
       const clock = new THREE.Clock();
-      let rafId = 0;
-      const animate = () => {
-        rafId = requestAnimationFrame(animate);
-        const t = clock.getElapsedTime() * 0.4;
-        particleMaterial.uniforms.time.value = t;
+      let lastTime = 0;
+      const targetFPS = 60;
+      const targetInterval = 1000 / targetFPS;
+      const animate = (currentTime) => {
+        animationRef.current = requestAnimationFrame(animate);
+        const deltaTime = currentTime - lastTime;
+        if (deltaTime < targetInterval) return;
+        lastTime = currentTime - (deltaTime % targetInterval);
+        const time = clock.getElapsedTime();
+        particleMaterial.uniforms.time.value = time;
         renderer.render(scene, camera);
       };
-      animate();
+      animationRef.current = requestAnimationFrame(animate);
 
+      let resizeTimeout = null;
       const handleResize = () => {
-        const w = Math.max(1, container.clientWidth);
-        const h = Math.max(1, container.clientHeight);
-        camera.aspect = w / h; camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          if (!mountRef.current) return;
+          const w = Math.max(1, container.clientWidth);
+          const h = Math.max(1, container.clientHeight);
+          camera.aspect = w / h; camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        }, 100);
       };
-      window.addEventListener('resize', handleResize);
+      window.addEventListener('resize', handleResize, { passive: true });
+
+      let observerTimeout = null;
+      const resizeObserverCallback = () => {
+        if (observerTimeout) clearTimeout(observerTimeout);
+        observerTimeout = setTimeout(handleResize, 100);
+      };
+      const resizeObserver = new ResizeObserver(resizeObserverCallback);
+      resizeObserverRef.current = resizeObserver;
+      resizeObserver.observe(container);
+
+      timeoutsRef.current.push(() => {
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        if (observerTimeout) clearTimeout(observerTimeout);
+      });
 
       return () => {
+        timeoutsRef.current.forEach(clearFn => clearFn());
+        timeoutsRef.current = [];
+        if (animationRef.current) { cancelAnimationFrame(animationRef.current); animationRef.current = null; }
         window.removeEventListener('resize', handleResize);
-        if (rafId) cancelAnimationFrame(rafId);
-        if (renderer){ renderer.dispose(); if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement); }
-        geometry.dispose(); particleMaterial.dispose();
+        if (resizeObserverRef.current) { resizeObserverRef.current.disconnect(); resizeObserverRef.current = null; }
+        if (sceneRef.current && pointsRef.current) { sceneRef.current.remove(pointsRef.current); }
+        if (geometryRef.current) { geometryRef.current.dispose(); geometryRef.current = null; }
+        if (materialRef.current) { materialRef.current.dispose(); materialRef.current = null; }
+        if (rendererRef.current) {
+          rendererRef.current.dispose();
+          if (container && rendererRef.current.domElement) container.removeChild(rendererRef.current.domElement);
+          rendererRef.current.forceContextLoss();
+          rendererRef.current = null;
+        }
+        sceneRef.current = null; cameraRef.current = null; pointsRef.current = null;
       };
-    }, []);
+    }, [count]);
 
-    return (
-      React.createElement('div', { ref: containerRef, style: {
-        margin: 0,
-        background: 'transparent',
-        overflow: 'hidden',
-        display: 'block',
-        height: '100%',
-        width: '100%'
-      }})
-    );
+    return React.createElement('div', { ref: mountRef, style: {
+      width: '100%', height: '100%', background: 'transparent', overflow: 'hidden'
+    }});
   };
-  ParticleCylinder.metadata = metadata;
+
+  const ParticleVessel = () => React.createElement(EmptyParticles, {});
+  ParticleVessel.metadata = {
+    themes: 'impartiality, empty potential, stillness as power',
+    visualization: 'Particles define a vessel through their movement around emptiness, showing how stillness contains infinite possibility',
+    promptSuggestion: '1. Add subtle void variations\n2. Create empty vessel patterns\n3. Vary spatial definitions naturally\n4. Introduce gentle utility waves\n5. Make emptiness follow natural forms'
+  };
 
   const mount = document.getElementById('logo-react');
-  if (mount){
+  if (mount) {
     const root = createRoot(mount);
-    root.render(React.createElement(ParticleCylinder));
+    root.render(React.createElement(ParticleVessel));
   }
 </script>
